@@ -48,6 +48,83 @@ const ADJECTIVES = ['升级款', '旗舰款', '经典款', '轻奢', '简约', '
 
 const UNITS = ['个', '件', '套', '台', '只', '条', '双', '瓶', '盒', '袋', '箱', '本', '支', '副', '张', '把']
 
+// ====== 商品描述生成器（富文本 HTML） ======
+function generateRichDescription(brand: string, adj: string, baseName: string, unit: string, seed: number): string {
+  // 亮点词库 — 轮换使用，让不同商品的描述有差异
+  const featurePools = [
+    [`极致性价比：${brand}官方直营，省去中间环节，把实惠直接给到您`, `精湛工艺：严格品控体系，每一${unit}都经过多重检测`, `无忧售后：7天无理由退换，30天质量问题包换，1年保修`, `快速发货：全国多仓直发，下单后24小时内出库`, `正品保障：${brand}官方授权，100%正品承诺`],
+    [`${adj}设计语言：由国际设计团队倾力打造，颜值与实用兼具`, `优质材质：严选环保原材料，通过SGS检测认证，安全放心`, `智能体验：搭载最新智能芯片，操作流畅，响应迅速`, `持久耐用：经实验室5000+次耐久测试，品质如一`, `场景百搭：无论是居家还是办公，都能完美融入`],
+    [`核心科技：${brand}自主研发专利技术，行业领先水平`, `人性化设计：符合人体工学，使用舒适不累`, `节能环保：一级能效标准，低碳生活从选择开始`, `静音运行：噪音低至35dB，不打扰您的生活`, `轻巧便携：紧凑机身设计，轻松收纳不占空间`],
+    [`甄选品质：${brand}坚持只做精品，宁缺毋滥`, `爆款口碑：全网累计销量突破百万，好评率98%+`, `创新功能：突破传统设计，重新定义${baseName}`, `安全防护：多重安全保护机制，使用更安心`, `超长续航：大容量电池+智能省电技术，告别频繁充电`],
+  ]
+
+  const pool = featurePools[seed % featurePools.length]
+
+  // 规格参数 — 不同 seed 生成不同表格
+  const specTemplates = [
+    `<table><tr><th>参数项</th><th>规格</th></tr><tr><td>品牌</td><td>${brand}</td></tr><tr><td>型号</td><td>${adj}${baseName}</td></tr><tr><td>材质</td><td>ABS+PC环保复合材料</td></tr><tr><td>颜色</td><td>经典黑 / 简约白 / 深空灰</td></tr><tr><td>尺寸</td><td>${rand(10, 45)}×${rand(8, 30)}×${rand(2, 15)}cm</td></tr><tr><td>净重</td><td>${randFloat(0.1, 5.0, 1)}kg</td></tr><tr><td>产地</td><td>中国大陆</td></tr></table>`,
+    `<table><tr><th>规格</th><th>详情</th></tr><tr><td>品牌</td><td>${brand}</td></tr><tr><td>系列</td><td>${adj}系列 ${seed % 10 + 1}代</td></tr><tr><td>材质工艺</td><td>航空级铝合金 / 一体成型</td></tr><tr><td>配色方案</td><td>曜石黑 / 珍珠白 / 星空蓝</td></tr><tr><td>包装尺寸</td><td>${rand(20, 50)}×${rand(15, 35)}×${rand(5, 20)}cm</td></tr><tr><td>毛重</td><td>约${randFloat(0.5, 6.0, 1)}kg</td></tr><tr><td>执行标准</td><td>GB/T ${rand(10000, 99999)}-2024</td></tr></table>`,
+    `<table><tr><th>技术参数</th><th>指标</th></tr><tr><td>品牌</td><td>${brand}</td></tr><tr><td>产品型号</td><td>${brand}-${adj}-${seed % 1000}</td></tr><tr><td>外壳材质</td><td>高品质工程塑料 / 防刮花涂层</td></tr><tr><td>可选颜色</td><td>深邃黑 / 皓月白 / 雾霾蓝 / 樱花粉</td></tr><tr><td>外形尺寸</td><td>约${rand(5, 40)}×${rand(5, 30)}×${rand(1, 18)}cm</td></tr><tr><td>产品净重</td><td>${randFloat(0.05, 4.0, 1)}kg</td></tr><tr><td>保修期限</td><td>全国联保 ${[1, 2, 3][seed % 3]} 年</td></tr></table>`,
+  ]
+
+  const specTable = specTemplates[seed % specTemplates.length]
+
+  // 亮点列表（打乱顺序取前4条）
+  const shuffled = [...pool].sort(() => (seed * 7 + 3) % pool.length - 2)
+  const highlights = shuffled.slice(0, 4).map(f => `<li>${f}</li>`).join('')
+
+  // 场景描述
+  const scenes = [
+    '无论是居家生活、办公学习，还是户外旅行，这款产品都能成为您的得力助手。简约而不简单的外观设计，让它轻松融入各种环境。',
+    `适用于日常通勤、商务差旅、休闲聚会等多种场合。一${unit}多用，满足您不同场景下的需求，让生活更加便捷高效。`,
+    '无论是送给亲朋好友作为礼物，还是犒劳自己的辛苦付出，都是非常不错的选择。精美大气的包装，彰显您的品味与心意。',
+    '从清晨的第一缕阳光到深夜的静谧时光，它都能陪伴在您身边，让每一天都充满品质感与幸福感。',
+  ]
+
+  const imgSeed1 = seed * 3 + 1
+  const imgSeed2 = seed * 3 + 2
+
+  // 组装完整 HTML
+  return `
+<div style="margin-bottom:16px;">
+  <p style="font-size:15px;color:#333;line-height:1.9;margin-bottom:12px;">
+    <strong>${brand}</strong> 全新推出的<strong>${adj}${baseName}</strong>，凝聚了品牌多年技术沉淀与设计理念。
+    本款产品主打<strong>${adj}</strong>风格，在功能性、美观性和耐用性之间达到了出色的平衡。
+    ${brand}一直以来坚持"品质为先"的原则，每一${unit}产品都经过严格的质量把控，
+    只为给用户带来超越期待的使用体验。
+  </p>
+
+  <p style="font-size:14px;color:#555;line-height:1.9;margin-bottom:12px;">
+    在原材料选择上，${brand}坚持使用高品质环保材料，从源头保障产品品质。
+    生产工艺方面，采用行业领先的自动化生产线，配合多重人工质检环节，
+    确保每一${unit}出厂的产品都经得起时间的考验。
+  </p>
+
+  <img src="https://picsum.photos/seed/desc${imgSeed1}/750/400" alt="${brand}${baseName}" style="width:100%;border-radius:8px;margin:12px 0;" />
+
+  <h3 style="font-size:16px;color:#333;margin:16px 0 8px;padding-left:8px;border-left:3px solid #ee0a24;">✨ 产品亮点</h3>
+  <ul style="font-size:14px;color:#555;line-height:2;padding-left:20px;margin:8px 0 16px;">
+    ${highlights}
+  </ul>
+
+  <h3 style="font-size:16px;color:#333;margin:16px 0 8px;padding-left:8px;border-left:3px solid #ee0a24;">📋 规格参数</h3>
+  ${specTable}
+
+  <img src="https://picsum.photos/seed/desc${imgSeed2}/750/400" alt="${brand}${baseName}实拍" style="width:100%;border-radius:8px;margin:12px 0;" />
+
+  <h3 style="font-size:16px;color:#333;margin:16px 0 8px;padding-left:8px;border-left:3px solid #ee0a24;">🎯 适用场景</h3>
+  <p style="font-size:14px;color:#555;line-height:1.9;margin-bottom:8px;">
+    ${scenes[seed % scenes.length]}
+  </p>
+
+  <p style="font-size:14px;color:#999;line-height:1.9;margin-top:16px;padding:12px;background:#fafafa;border-radius:6px;">
+    <strong>📦 包装清单：</strong>${baseName}${unit} ×1、说明书 ×1、保修卡 ×1、精美包装盒 ×1
+    ${seed % 3 === 0 ? '、赠品配件包 ×1' : seed % 3 === 1 ? '、收纳袋 ×1' : '、清洁布 ×1'}
+  </p>
+</div>
+`.trim()
+}
+
 // ====== 主函数 ======
 async function main() {
   console.log('🌱 开始初始化种子数据...')
@@ -302,7 +379,7 @@ async function main() {
 
       productData.push({
         name,
-        description: `${brand}出品，${adj}设计，${baseName}${unit}，品质保证`,
+        description: generateRichDescription(brand, adj, baseName, unit, seed),
         price,
         originalPrice,
         stock,
@@ -328,110 +405,7 @@ async function main() {
     console.log(`✅ 商品: ${PRODUCT_COUNT} 条`)
   }
 
-  // 始终查询商品列表（订单需要引用）
-  const allProducts = await prisma.product.findMany({ select: { id: true, name: true, price: true } })
-  if (allProducts.length === 0) {
-    console.log('⚠️  没有商品，跳过订单生成')
-  }
-
-  // =========== 7. 订单 ===========
-  console.log('📋 正在处理订单...')
-
-  const existingOrders = await prisma.order.count()
-  if (existingOrders > 0) {
-    console.log(`⏭️  订单已存在 (${existingOrders} 条)，跳过`)
-  } else if (allProducts.length > 0) {
-    const statuses = ['delivered', 'delivered', 'delivered', 'shipped', 'shipped', 'confirmed', 'pending', 'cancelled']
-    const consignees = ['张三', '李四', '王五', '赵六', '陈七', '周八', '吴九', '郑十']
-    const phones = ['13800138000', '13900139000', '13600136000', '13500135000', '13700137000', '15800158000', '15900159000', '18600186000']
-    const addresses = [
-      '广东省广州市天河区某某路100号',
-      '北京市朝阳区某某街道200号',
-      '上海市浦东新区某某路300号',
-      '浙江省杭州市西湖区某某路400号',
-      '四川省成都市高新区某某路500号',
-      '湖北省武汉市洪山区某某路600号',
-      '江苏省南京市鼓楼区某某路700号',
-      '重庆市渝北区某某路800号',
-    ]
-
-    const ORDER_COUNT = 200
-    const orderData: {
-      orderNo: string
-      userId: number
-      totalAmount: number
-      status: string
-      consignee: string
-      phone: string
-      address: string
-      remark: string | null
-      createdAt: Date
-      updatedAt: Date
-      items: { create: { productId: number; productName: string; productImage: string | null; price: number; quantity: number }[] }
-    }[] = []
-
-    for (let i = 0; i < ORDER_COUNT; i++) {
-      const daysAgo = rand(0, 29)
-      const date = new Date()
-      date.setDate(date.getDate() - daysAgo)
-      date.setHours(rand(7, 22), rand(0, 59), 0, 0)
-
-      const itemCount = rand(1, 5)
-      const picked = new Set<number>()
-      let total = 0
-      const items: { productId: number; productName: string; productImage: string | null; price: number; quantity: number }[] = []
-
-      for (let j = 0; j < itemCount; j++) {
-        let idx: number
-        let tries = 0
-        do {
-          idx = rand(0, allProducts.length - 1)
-          tries++
-        } while (picked.has(idx) && tries < 50)
-        picked.add(idx)
-
-        const p = allProducts[idx]
-        const qty = rand(1, 5)
-        items.push({
-          productId: p.id,
-          productName: p.name,
-          productImage: `https://picsum.photos/seed/o${i}${j}/100/100`,
-          price: p.price,
-          quantity: qty,
-        })
-        total += Number(p.price) * qty
-      }
-
-      const remarkOptions = [null, null, null, '请尽快发货', '发顺丰', '包装严实一点', '工作日配送', null, null]
-      orderData.push({
-        orderNo: `ORD${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${String(i).padStart(4, '0')}`,
-        userId: adminUser.id,
-        totalAmount: Math.round(total * 100) / 100,
-        status: statuses[rand(0, statuses.length - 1)],
-        consignee: pick(consignees),
-        phone: pick(phones),
-        address: pick(addresses),
-        remark: pick(remarkOptions),
-        createdAt: date,
-        updatedAt: date,
-        items: { create: items },
-      })
-
-      if ((i + 1) % 50 === 0) console.log(`  ... 已生成 ${i + 1} 个订单`)
-    }
-
-    // 逐条创建订单（需要嵌套 items create，不能用 createMany）
-    console.log('  ... 正在写入数据库...')
-    for (let i = 0; i < orderData.length; i += 50) {
-      const batch = orderData.slice(i, i + 50)
-      await Promise.all(batch.map(o => prisma.order.create({ data: o })))
-      console.log(`  ... 已写入 ${Math.min(i + 50, orderData.length)} 个订单`)
-    }
-
-    console.log(`✅ 订单: ${ORDER_COUNT} 条`)
-  }
-
-  // =========== 8. Banner ===========
+  // =========== 7. Banner ===========
   const bannerCount = await prisma.banner.count()
   if (bannerCount > 0) {
     console.log(`⏭️  Banner 已存在 (${bannerCount} 条)，跳过`)
