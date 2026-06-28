@@ -69,6 +69,9 @@
   /* Loading */
   --van-loading-spinner-color: #ee0a24;
 
+  /* BackTop */
+  --van-back-top-background: #ee0a24;
+
   /* Cell */
   --van-cell-active-color: #f9f9f9;
 }

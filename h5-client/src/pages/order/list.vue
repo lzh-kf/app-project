@@ -2,66 +2,77 @@
   <div class="order-list-page">
     <van-nav-bar title="我的订单" left-arrow fixed placeholder @click-left="goBack" />
 
-    <van-tabs v-model:active="activeTab" sticky @update:active="onTabChange">
-      <van-tab title="全部" name="all" />
-      <van-tab title="待付款" name="pending" />
-      <van-tab title="待发货" name="confirmed" />
-      <van-tab title="待收货" name="shipped" />
-      <van-tab title="已完成" name="delivered" />
-    </van-tabs>
+    <div class="tabs-sticky">
+      <van-tabs v-model:active="activeTab" @update:active="onTabChange">
+        <van-tab title="全部" name="all" />
+        <van-tab title="待付款" name="pending" />
+        <van-tab title="待发货" name="confirmed" />
+        <van-tab title="待收货" name="shipped" />
+        <van-tab title="已完成" name="delivered" />
+      </van-tabs>
+    </div>
 
     <!-- 订单列表 -->
     <div class="order-list">
-      <EmptyState v-if="!loading && orders.length === 0" description="暂无订单" />
+      <!-- 首次加载中 -->
+      <van-loading v-if="loading" type="spinner" size="24" class="loading-center" />
+      <template v-else>
+        <van-list
+          v-if="orders.length"
+          v-model:loading="loadingMore"
+          :finished="finished"
+          finished-text="已加载全部订单"
+          @load="onLoadMore"
+        >
+          <div v-for="order in orders" :key="order.id" class="order-card" @click="goDetail(order.id)">
+            <!-- 头部 -->
+            <div class="order-top">
+              <span class="order-no">订单号：{{ order.orderNo }}</span>
+              <span class="order-status" :class="'status-' + order.status">{{ statusLabel(order.status) }}</span>
+            </div>
 
-      <div v-for="order in orders" :key="order.id" class="order-card" @click="goDetail(order.id)">
-        <!-- 头部 -->
-        <div class="order-top">
-          <span class="order-no">订单号：{{ order.orderNo }}</span>
-          <span class="order-status" :class="'status-' + order.status">{{ statusLabel(order.status) }}</span>
-        </div>
+            <!-- 商品 -->
+            <div v-for="item in order.items" :key="item.id" class="order-item">
+              <van-image :src="itemImage(item)" fit="cover" width="72" height="72" radius="6" class="item-img" />
+              <div class="item-body">
+                <div class="item-name">{{ item.productName }}</div>
+                <div class="item-bottom">
+                  <span class="item-price">¥{{ item.price }}</span>
+                  <span class="item-qty">×{{ item.quantity }}</span>
+                </div>
+              </div>
+            </div>
 
-        <!-- 商品 -->
-        <div v-for="item in order.items" :key="item.id" class="order-item">
-          <van-image :src="itemImage(item)" fit="cover" width="72" height="72" radius="6" class="item-img" />
-          <div class="item-body">
-            <div class="item-name">{{ item.productName }}</div>
-            <div class="item-bottom">
-              <span class="item-price">¥{{ item.price }}</span>
-              <span class="item-qty">×{{ item.quantity }}</span>
+            <!-- 底部 -->
+            <div class="order-bottom">
+              <span class="order-time">{{ fmtTime(order.createdAt) }}</span>
+              <span class="order-total">
+                共 {{ totalQty(order) }} 件 &nbsp;合计：<b>¥{{ order.totalAmount }}</b>
+              </span>
+            </div>
+
+            <!-- 操作 -->
+            <div class="order-actions" v-if="order.status === 'pending'">
+              <van-button size="small" plain type="default" @click.stop="onCancel(order.id)">取消</van-button>
+              <van-button size="small" type="danger" @click.stop="onPay(order.id)">去付款</van-button>
+            </div>
+            <div class="order-actions" v-if="order.status === 'shipped'">
+              <van-button size="small" plain type="default" @click.stop="goDetail(order.id)">查看详情</van-button>
+              <van-button size="small" type="primary" @click.stop="onConfirm(order.id)">确认收货</van-button>
+            </div>
+            <div class="order-actions" v-if="order.status === 'confirmed'">
+              <van-button size="small" plain type="default" @click.stop="onCancel(order.id)">取消</van-button>
             </div>
           </div>
-        </div>
-
-        <!-- 底部 -->
-        <div class="order-bottom">
-          <span class="order-time">{{ fmtTime(order.createdAt) }}</span>
-          <span class="order-total">
-            共 {{ totalQty(order) }} 件 &nbsp;合计：<b>¥{{ order.totalAmount }}</b>
-          </span>
-        </div>
-
-        <!-- 操作 -->
-        <div class="order-actions" v-if="order.status === 'pending'">
-          <van-button size="small" plain type="default" @click.stop="onCancel(order.id)">取消</van-button>
-          <van-button size="small" type="danger" @click.stop="onPay(order.id)">去付款</van-button>
-        </div>
-        <div class="order-actions" v-if="order.status === 'shipped'">
-          <van-button size="small" plain type="default" @click.stop="goDetail(order.id)">查看详情</van-button>
-          <van-button size="small" type="primary" @click.stop="onConfirm(order.id)">确认收货</van-button>
-        </div>
-        <div class="order-actions" v-if="order.status === 'confirmed'">
-          <van-button size="small" plain type="default" @click.stop="onCancel(order.id)">取消</van-button>
-        </div>
-      </div>
+        </van-list>
+        <EmptyState v-else description="暂无订单" />
+      </template>
     </div>
-
-    <van-loading v-if="loading" type="spinner" class="loading-center" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { showToast, showConfirmDialog } from 'vant'
 import { ordersApi } from '@/api/orders'
@@ -74,6 +85,16 @@ const route = useRoute()
 const activeTab = ref((route.query.status as string) || 'all')
 const orders = ref<Order[]>([])
 const loading = ref(false)
+const loadingMore = ref(false)
+
+// 分页
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+const finished = computed(() => {
+  if (total.value === 0) return true
+  return orders.value.length >= total.value
+})
 
 function statusLabel(s: string) { return OrderStatusLabels[s] || s }
 function totalQty(o: Order) { return o.items.reduce((s, i) => s + i.quantity, 0) }
@@ -94,15 +115,34 @@ function itemImage(item: OrderItem): string {
   return 'https://picsum.photos/seed/ph/200/200'
 }
 
-async function fetchOrders() {
-  loading.value = true
+async function fetchOrders(append = false) {
+  if (append) {
+    loadingMore.value = true
+    page.value++
+  } else {
+    loading.value = true
+    page.value = 1
+  }
+
   try {
     const s = activeTab.value === 'all' ? undefined : activeTab.value
-    const res = await ordersApi.getList({ page: 1, pageSize: 50, status: s })
-    orders.value = res.list
-  } catch { orders.value = [] } finally {
+    const res = await ordersApi.getList({ page: page.value, pageSize: pageSize.value, status: s })
+    if (append) {
+      orders.value.push(...res.list)
+    } else {
+      orders.value = res.list
+    }
+    total.value = res.total
+  } catch {
+    if (!append) orders.value = []
+  } finally {
     loading.value = false
+    loadingMore.value = false
   }
+}
+
+function onLoadMore() {
+  fetchOrders(true)
 }
 
 function onTabChange() { fetchOrders() }
@@ -134,8 +174,17 @@ onMounted(() => { fetchOrders() })
 
 <style scoped>
 .order-list-page {
-  height: 100vh; overflow-y: auto;
+  height: 100vh;
+  overflow-y: auto;
   background: #f5f6f8;
+}
+
+/* tabs 粘在 navbar 下方 */
+.tabs-sticky {
+  position: sticky;
+  top: 46px;
+  z-index: 99;
+  background: #fff;
 }
 
 .order-list {
@@ -243,5 +292,15 @@ onMounted(() => { fetchOrders() })
   display: flex;
   justify-content: center;
   padding: 40px;
+}
+
+/* van-list 底部文字 */
+.order-list :deep(.van-list__finished-text) {
+  font-size: 13px;
+  color: #999;
+  padding: 4px 0;
+}
+.order-list :deep(.van-list__loading) {
+  padding: 4px 0;
 }
 </style>

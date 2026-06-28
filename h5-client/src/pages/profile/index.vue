@@ -3,14 +3,14 @@
     <!-- 用户信息头部 -->
     <div class="profile-header">
       <div class="header-bg" />
-      <div class="header-content" @click="goEditProfile">
+      <div class="header-content">
         <van-image round width="64" height="64" fit="cover" :src="member?.avatar || defaultAvatar" />
         <div class="header-info">
           <div class="header-name">{{ member?.nickname || '点击登录' }}</div>
           <div class="header-phone" v-if="member">{{ maskPhone(member.phone) }}</div>
         </div>
-        <van-icon v-if="member" name="setting-o" size="20" @click.stop="goEditProfile" />
-        <van-icon v-else name="arrow" size="18" color="#fff" />
+        <van-icon v-if="member" name="setting-o" size="20" @click="goEditProfile" />
+        <van-icon v-else name="arrow" size="18" color="#fff" @click="router.push('/login')" />
       </div>
     </div>
 
@@ -37,7 +37,7 @@
     </template>
 
     <!-- 已登录 -->
-    <template v-if="authStore.isLoggedIn">
+    <template v-else>
       <!-- 订单面板 -->
       <div class="order-panel card">
         <div class="panel-header">
@@ -69,7 +69,7 @@
         <van-cell title="收货地址" is-link @click="router.push('/address')" center>
           <template #icon><van-icon name="location-o" size="18" /></template>
         </van-cell>
-        <van-cell title="个人信息" is-link @click="router.push('/profile/edit')" center>
+        <van-cell title="个人信息" is-link @click="router.push('/profile/detail')" center>
           <template #icon><van-icon name="user-o" size="18" /></template>
         </van-cell>
       </div>

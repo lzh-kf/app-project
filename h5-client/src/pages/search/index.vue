@@ -1,5 +1,5 @@
 <template>
-  <div class="search-page">
+  <div ref="scrollContainer" class="search-page">
     <div class="search-bar-wrap">
       <van-search
         v-model="keyword"
@@ -73,12 +73,22 @@
         </span>
       </div>
 
+      <!-- 首次加载中 -->
       <van-loading v-if="loading" type="spinner" size="24" class="loading-center" />
       <template v-else>
-        <div v-if="results.length" class="results-header">找到 {{ results.length }} 个相关商品</div>
-        <div v-if="results.length" class="goods-grid">
-          <ProductCard v-for="product in results" :key="product.id" :product="product" />
-        </div>
+        <template v-if="results.length">
+          <div class="results-header">找到 {{ total }} 个相关商品</div>
+          <van-list
+            v-model:loading="loadingMore"
+            :finished="finished"
+            finished-text="已加载全部商品"
+            @load="onLoadMore"
+          >
+            <div class="goods-grid">
+              <ProductCard v-for="product in results" :key="product.id" :product="product" />
+            </div>
+          </van-list>
+        </template>
         <EmptyState v-else description="未找到相关商品" />
       </template>
     </div>
@@ -127,6 +137,9 @@
         </div>
       </div>
     </van-popup>
+
+    <!-- 回到顶部 -->
+    <van-back-top :target="scrollContainer" visibility-height="400" right="16" bottom="60" />
   </div>
 </template>
 
@@ -144,6 +157,7 @@ const route = useRoute()
 
 const keyword = ref('')
 const loading = ref(false)
+const loadingMore = ref(false)
 const showSuggestion = ref(false)
 const searched = ref(false)
 const results = ref<Product[]>([])
@@ -153,6 +167,17 @@ const showFilter = ref(false)
 const filterCategoryId = ref<number>(0)
 const filterCategories = ref<Category[]>([])
 const expandedId = ref<number>(0)
+const scrollContainer = ref<HTMLElement>()
+
+// 分页
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+const finished = computed(() => {
+  // 必须等待首次请求完成（total 可能是初始值 0 或真实值）
+  if (total.value === 0) return true
+  return results.value.length >= total.value
+})
 
 const sortOptions = [
   { label: '综合', value: '' },
@@ -203,9 +228,14 @@ function resetFilter() {
 // 联想词
 const suggestions = computed(() => results.value.slice(0, 8))
 
+let skipWatcher = false
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 watch(keyword, (val) => {
+  if (skipWatcher) {
+    skipWatcher = false
+    return
+  }
   if (debounceTimer) clearTimeout(debounceTimer)
   if (!val.trim()) {
     results.value = []
@@ -242,6 +272,11 @@ function onSearchConfirm(val: string) {
 }
 
 function confirmSearch(kw: string) {
+  // 取消联想词延迟查询，防止其覆盖搜索结果
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+  }
   saveHistory(kw)
   showSuggestion.value = false
   searched.value = true
@@ -251,17 +286,41 @@ function confirmSearch(kw: string) {
   doSearch()
 }
 
-function doSearch() {
-  loading.value = true
-  const params: Record<string, any> = { pageSize: 50 }
+function doSearch(append = false) {
+  if (append) {
+    loadingMore.value = true
+    page.value++
+  } else {
+    loading.value = true
+    page.value = 1
+  }
+
+  const params: Record<string, any> = {
+    page: page.value,
+    pageSize: pageSize.value,
+  }
   if (keyword.value) params.keyword = keyword.value
   if (activeSort.value && activeSort.value !== '') params.sort = activeSort.value
   if (filterCategoryId.value > 0) params.categoryId = filterCategoryId.value
+
   productsApi.getList(params).then(res => {
-    results.value = res.list
-  }).catch(() => { results.value = [] }).finally(() => {
+    if (append) {
+      results.value.push(...res.list)
+    } else {
+      results.value = res.list
+    }
+    total.value = res.total
+  }).catch(() => {
+    if (!append) results.value = []
+  }).finally(() => {
     loading.value = false
+    loadingMore.value = false
   })
+}
+
+/** 滚动触底时加载更多 */
+function onLoadMore() {
+  doSearch(true)
 }
 
 async function loadFilterCategories() {
@@ -308,8 +367,16 @@ function clearHistory() {
   history.value = []
 }
 
-onMounted(() => {
-  if (route.query.from === 'cart') {
+// 根据 URL query 触发搜索（Banner 跳转等）
+function triggerSearchFromQuery() {
+  if (route.query.keyword) {
+    const kw = (route.query.keyword as string).trim()
+    if (kw) {
+      skipWatcher = true
+      keyword.value = kw
+      confirmSearch(kw)
+    }
+  } else if (route.query.from === 'cart') {
     keyword.value = ''
     searched.value = true
     showSuggestion.value = false
@@ -317,7 +384,20 @@ onMounted(() => {
     loadFilterCategories()
     doSearch()
   }
+}
+
+// 首次挂载
+onMounted(() => {
+  triggerSearchFromQuery()
 })
+
+// 后续同一组件内路由变化（如 Banner 切换 keyword）
+watch(
+  () => route.query.keyword,
+  () => {
+    triggerSearchFromQuery()
+  }
+)
 </script>
 
 <style scoped>
@@ -435,4 +515,23 @@ onMounted(() => {
   border-top: 1px solid #f0f0f0;
 }
 .filter-footer .van-button { flex: 1; border-radius: 20px; }
+
+/* van-list 底部文字 */
+.search-results :deep(.van-list__finished-text) {
+  font-size: 13px;
+  color: #999;
+  padding: 8px 0 12px;
+}
+.search-results :deep(.van-list__loading) {
+  padding: 6px 0 8px;
+}
+
+/* 回到顶部按钮 — 红色主题 */
+.search-page :deep(.van-back-top) {
+  --van-back-top-background: #ee0a24 !important;
+  background: #ee0a24 !important;
+}
+.search-page :deep(.van-back-top__icon) {
+  color: #fff !important;
+}
 </style>

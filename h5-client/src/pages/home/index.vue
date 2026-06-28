@@ -11,7 +11,7 @@
     <!-- Banner轮播 -->
     <div class="banner-wrap" v-if="banners.length">
       <van-swipe :autoplay="3000" indicator-color="white" class="banner-swipe">
-        <van-swipe-item v-for="banner in banners" :key="banner.id">
+        <van-swipe-item v-for="banner in banners" :key="banner.id" @click="goBanner(banner.link)">
           <van-image :src="banner.image" :alt="banner.title" fit="cover" class="banner-image" />
         </van-swipe-item>
       </van-swipe>
@@ -81,6 +81,10 @@ async function loadHomeData() {
 }
 
 function goSearch() { router.push('/search') }
+function goBanner(link?: string) {
+  if (!link) return
+  router.push(link)
+}
 function goCategory(categoryId?: number) {
   if (categoryId) {
     router.push({ path: '/category', query: { id: categoryId } })

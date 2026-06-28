@@ -35,6 +35,9 @@
         </div>
         <EmptyState v-else-if="!loading" description="暂无商品" />
         <van-loading v-if="loading" type="spinner" size="24" class="loading-center" />
+
+        <!-- 回到顶部（仅内容区域） -->
+        <van-back-top :target="contentRef" visibility-height="400" right="12" bottom="60" />
       </div>
     </div>
   </div>
@@ -209,6 +212,14 @@ watch(() => route.query.id, (newId) => {
 .sub-active {
   background: #ee0a24;
   color: #fff;
+}
+
+/* 回到顶部 — 低调半透明 */
+.content :deep(.van-back-top) {
+  --van-back-top-background: rgba(0, 0, 0, 0.18);
+}
+.content :deep(.van-back-top__icon) {
+  color: rgba(255, 255, 255, 0.85);
 }
 
 /* 商品网格 */

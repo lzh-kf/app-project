@@ -43,7 +43,8 @@ instance.interceptors.response.use(
       const message = error.response.data?.message
 
       if (status === 401) {
-        localStorage.removeItem('member_token')
+        // 通过自定义事件通知 auth store 同步清理状态
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'))
         showToast('请先登录')
       } else {
         showToast(message || '网络错误，请重试')
