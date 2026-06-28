@@ -27,5 +27,7 @@ ENV NODE_ENV=production
 CMD cd h5-server && \
     echo "Waiting for database..." && \
     npx prisma db push --accept-data-loss && \
+    echo "Seeding data..." && \
+    npx prisma db seed && \
     echo "Starting server..." && \
     npx tsx src/index.ts
