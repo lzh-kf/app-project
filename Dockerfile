@@ -29,5 +29,7 @@ CMD cd h5-server && \
     npx prisma db push --accept-data-loss && \
     echo "Seeding data..." && \
     npx prisma db seed && \
+    echo "Migrating product descriptions..." && \
+    npx tsx prisma/migrate-product-descriptions.ts && \
     echo "Starting server..." && \
     npx tsx src/index.ts
