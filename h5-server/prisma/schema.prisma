@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ 管理端 RBAC 模型（镜像，C端只读引用） ============
+
+model User {
+  id        Int        @id @default(autoincrement())
+  username  String     @unique
+  password  String
+  email     String?
+  avatar    String?
+  status    Int        @default(1)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  roles     UserRole[]
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  code        String           @unique
+  description String?
+  status      Int              @default(1)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  users       UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  name        String
+  code        String           @unique
+  description String?
+  parentId    Int?
+  parent      Permission?      @relation("PermissionHierarchy", fields: [parentId], references: [id])
+  children    Permission[]     @relation("PermissionHierarchy")
+  type        String           @default("button")
+  path        String?
+  icon        String?
+  sort        Int              @default(0)
+  status      Int              @default(1)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  roles       RolePermission[]
+}
+
+model UserRole {
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       Int
+  role         Role       @relation(fields: [roleId], references: [id])
+  permissionId Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}
+
+// ============ 商城模型（共享表） ============
+
+model Category {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?
+  parentId    Int?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  sort        Int        @default(0)
+  status      Int        @default(1)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  products    Product[]
+}
+
+model Product {
+  id            Int         @id @default(autoincrement())
+  name          String
+  description   String?
+  price         Decimal     @db.Decimal(10, 2)
+  originalPrice Decimal?    @db.Decimal(10, 2)
+  stock         Int         @default(0)
+  categoryId    Int?
+  category      Category?   @relation(fields: [categoryId], references: [id])
+  images        String?
+  status        Int         @default(1)
+  isFeatured    Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  orderItems    OrderItem[]
+  cartItems     Cart[]
+  favorites     Favorite[]
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  orderNo     String      @unique
+  userId      Int         @default(0)
+  memberId    Int?
+  member      Member?     @relation(fields: [memberId], references: [id])
+  totalAmount Decimal     @db.Decimal(10, 2)
+  status      String      @default("pending")
+  consignee   String
+  phone       String
+  address     String
+  remark      String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  items       OrderItem[]
+
+  @@index([memberId])
+}
+
+model OrderItem {
+  id           Int      @id @default(autoincrement())
+  orderId      Int
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    Int
+  product      Product  @relation(fields: [productId], references: [id])
+  productName  String
+  productImage String?
+  price        Decimal  @db.Decimal(10, 2)
+  quantity     Int
+}
+
+// ============ C端会员模型（新增） ============
+
+model Member {
+  id         Int        @id @default(autoincrement())
+  phone      String     @unique
+  password   String
+  nickname   String?
+  avatar     String?
+  gender     Int        @default(0)
+  birthday   DateTime?
+  status     Int        @default(1)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  addresses  Address[]
+  cartItems  Cart[]
+  orders     Order[]
+  favorites  Favorite[]
+}
+
+model Address {
+  id         Int      @id @default(autoincrement())
+  memberId   Int
+  member     Member   @relation(fields: [memberId], references: [id])
+  consignee  String
+  phone      String
+  province   String
+  city       String
+  district   String
+  detail     String
+  isDefault  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([memberId])
+}
+
+model Cart {
+  id         Int      @id @default(autoincrement())
+  memberId   Int
+  member     Member   @relation(fields: [memberId], references: [id])
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id])
+  quantity   Int      @default(1)
+  selected   Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([memberId, productId])
+  @@index([memberId])
+}
+
+model Banner {
+  id        Int      @id @default(autoincrement())
+  title     String
+  image     String
+  link      String?
+  sort      Int      @default(0)
+  status    Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, sort])
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id])
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([memberId, productId])
+  @@index([memberId])
+}

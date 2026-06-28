@@ -1,0 +1,74 @@
+/* ========== Vant 4 主题覆盖 - 红色系 ========== */
+
+:root {
+  /* 品牌色 */
+  --van-primary-color: #ee0a24;
+  --van-danger-color: #ee0a24;
+  --van-warning-color: #ff976a;
+  --van-success-color: #07c160;
+
+  /* 按钮 */
+  --van-button-primary-background: #ee0a24;
+  --van-button-primary-border-color: #ee0a24;
+  --van-button-danger-background: #ee0a24;
+  --van-button-danger-border-color: #ee0a24;
+  --van-button-primary-active-background: #d0091e;
+  --van-button-danger-active-background: #d0091e;
+
+  /* Tabbar */
+  --van-tabbar-item-active-color: #ee0a24;
+  --van-tabbar-item-active-background: #fff;
+
+  /* Tabs */
+  --van-tabs-bottom-bar-color: #ee0a24;
+  --van-tab-active-text-color: #ee0a24;
+
+  /* NavBar */
+  --van-nav-bar-icon-color: #333;
+  --van-nav-bar-text-color: #333;
+  --van-nav-bar-title-text-color: #333;
+
+  /* Checkbox */
+  --van-checkbox-checked-icon-color: #ee0a24;
+
+  /* Radio */
+  --van-radio-checked-icon-color: #ee0a24;
+
+  /* Switch */
+  --van-switch-active-color: #ee0a24;
+  --van-switch-on-background: #ee0a24;
+
+  /* Stepper */
+  --van-stepper-active-color: #ee0a24;
+
+  /* Sidebar */
+  --van-sidebar-selected-border-color: #ee0a24;
+  --van-sidebar-selected-text-color: #ee0a24;
+
+  /* Tag */
+  --van-tag-danger-color: #ee0a24;
+
+  /* Search */
+  --van-search-action-text-color: #333;
+
+  /* Steps */
+  --van-steps-active-color: #ee0a24;
+
+  /* Popup */
+  --van-popup-round-radius: 16px;
+
+  /* SubmitBar */
+  --van-submit-bar-button-danger-background: #ee0a24;
+
+  /* Slider */
+  --van-slider-active-background: #ee0a24;
+
+  /* Badge */
+  --van-badge-background: #ee0a24;
+
+  /* Loading */
+  --van-loading-spinner-color: #ee0a24;
+
+  /* Cell */
+  --van-cell-active-color: #f9f9f9;
+}

@@ -1,0 +1,14 @@
+{
+  "name": "h5-mall",
+  "version": "1.0.0",
+  "private": true,
+  "description": "C端 H5 移动商城",
+  "scripts": {
+    "install:all": "cd h5-server && npm install && cd ../h5-client && npm install",
+    "dev:server": "cd h5-server && npm run dev",
+    "dev:client": "cd h5-client && npm run dev",
+    "build:client": "cd h5-client && npm run build",
+    "db:pull": "cd h5-server && npx prisma db pull",
+    "db:generate": "cd h5-server && npx prisma generate"
+  }
+}
