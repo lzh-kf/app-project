@@ -1,7 +1,11 @@
 <template>
   <div class="main-layout">
     <div class="main-content">
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <keep-alive :include="['HomePage', 'CategoryPage']">
+          <component :is="Component" />
+        </keep-alive>
+      </router-view>
     </div>
     <van-tabbar v-model="activeTab" fixed safe-area-inset-bottom>
       <van-tabbar-item icon="home-o" @click="switchTab(0)">首页</van-tabbar-item>

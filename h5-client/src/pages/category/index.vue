@@ -40,8 +40,12 @@
   </div>
 </template>
 
+<script lang="ts">
+export default { name: 'CategoryPage' }
+</script>
+
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { categoriesApi } from '@/api/categories'
 import { productsApi } from '@/api/products'
@@ -115,6 +119,17 @@ async function loadProducts(categoryId: number) {
 }
 
 onMounted(() => { loadCategories() })
+
+// keep-alive 缓存后，从首页跳转不同分类时通过 watch 响应
+watch(() => route.query.id, (newId) => {
+  if (newId && categories.value.length) {
+    const id = parseInt(newId as string)
+    if (activeCategory.value !== id) {
+      const target = findCategoryById(categories.value, id)
+      if (target) selectCategory(target)
+    }
+  }
+})
 </script>
 
 <style scoped>

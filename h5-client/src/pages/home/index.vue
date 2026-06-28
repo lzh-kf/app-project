@@ -48,6 +48,10 @@
   </div>
 </template>
 
+<script lang="ts">
+export default { name: 'HomePage' }
+</script>
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
