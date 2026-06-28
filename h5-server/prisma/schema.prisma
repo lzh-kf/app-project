@@ -124,11 +124,11 @@ model Order {
 }
 
 model OrderItem {
-  id           Int      @id @default(autoincrement())
+  id           Int     @id @default(autoincrement())
   orderId      Int
-  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId    Int
-  product      Product  @relation(fields: [productId], references: [id])
+  product      Product @relation(fields: [productId], references: [id])
   productName  String
   productImage String?
   price        Decimal
@@ -138,49 +138,49 @@ model OrderItem {
 // ============ C端会员模型（新增） ============
 
 model Member {
-  id         Int        @id @default(autoincrement())
-  phone      String     @unique
-  password   String
-  nickname   String?
-  avatar     String?
-  gender     Int        @default(0)
-  birthday   DateTime?
-  status     Int        @default(1)
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  addresses  Address[]
-  cartItems  Cart[]
-  orders     Order[]
-  favorites  Favorite[]
+  id        Int        @id @default(autoincrement())
+  phone     String     @unique
+  password  String
+  nickname  String?
+  avatar    String?
+  gender    Int        @default(0)
+  birthday  DateTime?
+  status    Int        @default(1)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  addresses Address[]
+  cartItems Cart[]
+  orders    Order[]
+  favorites Favorite[]
 }
 
 model Address {
-  id         Int      @id @default(autoincrement())
-  memberId   Int
-  member     Member   @relation(fields: [memberId], references: [id])
-  consignee  String
-  phone      String
-  province   String
-  city       String
-  district   String
-  detail     String
-  isDefault  Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id])
+  consignee String
+  phone     String
+  province  String
+  city      String
+  district  String
+  detail    String
+  isDefault Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([memberId])
 }
 
 model Cart {
-  id         Int      @id @default(autoincrement())
-  memberId   Int
-  member     Member   @relation(fields: [memberId], references: [id])
-  productId  Int
-  product    Product  @relation(fields: [productId], references: [id])
-  quantity   Int      @default(1)
-  selected   Int      @default(1)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id])
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int      @default(1)
+  selected  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([memberId, productId])
   @@index([memberId])
